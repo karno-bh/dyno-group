@@ -1,0 +1,20 @@
+subset:
+  select:
+    - column1:
+      as: my_column1
+    - column2
+    - column3
+    - column4
+  where:
+    rule1: len(my_column1) < 10
+    rule2: my_column1 like '*kokoko*'
+    rule3: column2 != column3
+groups:
+  column2:
+    collect_simialars: true
+    collect_property: second_column_values
+  my_column:
+    collect_simialars: false
+  column4:
+    collect_similars: false
+    collect_property: fourth_column_values

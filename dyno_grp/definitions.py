@@ -1,0 +1,148 @@
+"""
+This module aggregates the "grammar" definitions for the clauses of a definition for grouper
+"""
+from collections import OrderedDict
+from typing import Optional, Dict
+
+from dyno_grp.errors import ClauseException
+
+
+class Column:
+    def __init__(self, name, alias=None) -> None:
+        super().__init__()
+        if not isinstance(name, str) or not name:
+            raise ClauseException("Column Name should be non-empty string")
+        if alias and not isinstance(alias, str):
+            raise ClauseException("If Column Alias is defined it should be non-empty string")
+        self._column_name: str = name
+        self._column_alias: Optional[str] = alias
+
+    @property
+    def name(self):
+        return self._column_name
+
+    @property
+    def alias(self):
+        if self._column_alias:
+            return self._column_alias
+        else:
+            return self._column_name
+
+    def __repr__(self):
+        return f"Column('{self._column_name}', '{self._column_alias}')"
+
+
+class SelectClause:
+    def __init__(self, columns: [Column]) -> None:
+        super().__init__()
+        self._validate_columns(columns=columns)
+        self._columns = columns
+        self._columns_cache = {col.name: col for col in columns}
+
+    def __len__(self):
+        return len(self._columns)
+
+    def __getitem__(self, item) -> Column:
+        if isinstance(item, int):
+            return self._columns[item]
+        if isinstance(item, str):
+            return self._columns_cache[item]
+        raise KeyError(f"Cannot retrieve {item}")
+
+    def __repr__(self):
+        return f"SelectClause({repr(self._columns)})"
+
+    @staticmethod
+    def _validate_columns(columns):
+        if not columns:
+            raise ClauseException("Columns must not be empty")
+        column_names = set()
+        column_aliases = set()
+        duplicated_names = set()
+        duplicated_aliases = set()
+        for i, col in enumerate(columns):
+            if not isinstance(col, Column):
+                raise ClauseException(f"Column at index {i} is not of type column")
+            if col.name in column_names:
+                duplicated_names.add(col.name)
+            if col.alias in column_aliases:
+                duplicated_aliases.add(col.alias)
+            column_names.add(col.name)
+            column_aliases.add(col.alias)
+        if duplicated_aliases or duplicated_names:
+            res_exception_str = "There are duplications in column definitions."
+            if duplicated_names:
+                res_exception_str += f" Duplicated Names: {duplicated_names}."
+            if duplicated_aliases:
+                res_exception_str += f" Duplicated Aliases: {duplicated_aliases}."
+            raise ClauseException(res_exception_str)
+
+
+class WhereClause:
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class GroupDef:
+    def __init__(self,
+                 group_name: str,
+                 collect_similar: bool = False,
+                 aggregated_property: str = None) -> None:
+        super().__init__()
+        if not group_name or not isinstance(group_name, str):
+            raise ClauseException("Group Name must be non empty string")
+        if not isinstance(collect_similar, bool):
+            raise ClauseException("Collect Similar must be boolean")
+        if collect_similar and not aggregated_property:
+            raise ClauseException("IF collect_similar is defined THEN aggregate_property must be defined")
+        self._group_name = group_name
+        self._collect_similar = collect_similar
+        self._aggregated_property = aggregated_property
+
+    @property
+    def group_name(self) -> str:
+        return self._group_name
+
+    @property
+    def collect_similar(self) -> bool:
+        return self._collect_similar
+
+    @property
+    def aggregated_property(self):
+        return self._aggregated_property
+
+
+GroupName = str
+
+
+class GroupsClause:
+    def __init__(self, groups: Dict[GroupName, GroupDef]) -> None:
+        super().__init__()
+        self._groups = groups
+
+    def __getitem__(self, item):
+        return self._groups[item]
+
+    def __iter__(self):
+        return self._groups.values()
+
+    @staticmethod
+    def _validate_groups(groups: Dict[GroupName, GroupDef]):
+        if not groups:
+            raise ClauseException("Groups cannot be empty")
+        if not isinstance(groups, OrderedDict):
+            raise ClauseException("Groups must be an OrderedDict (explicitly!)")
+
+        for group_name, group_def in groups.items():
+            if not isinstance(group_name, str):
+                raise ClauseException("Group Key must be only string")
+            if not isinstance(group_def, GroupDef):
+                raise ClauseException("Group Definition must be of type GroupDef")
+
+    @staticmethod
+    def from_raw(groups_definition: OrderedDict):
+        groups = OrderedDict()
+        for group_name, group_def in groups_definition.items():
+            groups[group_name] = GroupDef(group_name=group_name, **group_def)
+        return GroupsClause(groups)
+
