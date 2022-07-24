@@ -1,0 +1,27 @@
+{
+  "select": [
+    {
+      "column1": {
+        "as": "my_column"
+      }
+    },
+    "column2",
+    "column3",
+    "column4",
+    "column5"
+  ],
+  "where": {},
+  "groups": {
+    "column2": {
+      "collect_similar": true,
+      "aggregated_property": "second_column_values"
+    },
+    "my_column1": {
+      "collect_similar": false
+    },
+    "column4": {
+      "collect_similar": false,
+      "aggregated_property": "fourth_column_values"
+    }
+  }
+}

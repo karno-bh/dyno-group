@@ -49,6 +49,9 @@ class SelectClause:
             return self._columns_cache[item]
         raise KeyError(f"Cannot retrieve {item}")
 
+    def __iter__(self):
+        return self._columns.__iter__()
+
     def __repr__(self):
         return f"SelectClause({repr(self._columns)})"
 
@@ -128,7 +131,10 @@ class GroupsClause:
         return self._groups[item]
 
     def __iter__(self):
-        return self._groups.values()
+        return self._groups.__iter__()
+
+    def items(self):
+        return self._groups.items()
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self._groups})"
@@ -159,18 +165,65 @@ class GroupsClause:
 class GroupRule:
     def __init__(self,
                  select_clause: SelectClause,
-                 where_clause: WhereClause,
+                 where_clause: Optional[WhereClause],
                  groups_clause: GroupsClause) -> None:
         super().__init__()
+        self._validate_group_relations(select_clause,
+                                       where_clause,
+                                       groups_clause)
         self._select_clause = select_clause
         self._where_clause = where_clause
         self._group_clause = groups_clause
+
+    @property
+    def select_clause(self):
+        return self._select_clause
+
+    @property
+    def where_clause(self):
+        return self._where_clause
+
+    @property
+    def group_clause(self):
+        return self._group_clause
 
     @staticmethod
     def _validate_group_relations(select_clause: SelectClause,
                                   where_clause: WhereClause,
                                   groups_clause: GroupsClause):
-        for group, group_def in groups_clause:
-            if group not in select_clause:
+        select_clause_aliases = set(col.alias for col in select_clause)
+        for group, group_def in groups_clause.items():
+            if group not in select_clause_aliases:
                 raise ClauseException(f"Group {group} does not exist in select clause")
+
+    @staticmethod
+    def from_raw(rule_definition: dict):
+        select = rule_definition["select"]
+        columns = []
+        for i, column in enumerate(select):
+            if isinstance(column, str):
+                column_def = Column(column)
+            elif isinstance(column, dict):
+                if len(column) > 1:
+                    raise ClauseException(f"Column at index {i} must contain only one column definition")
+                column_name = next(iter(column))
+                alias = column[column_name].get("as")
+                if not alias:
+                    raise ClauseException(f"Alias must be defined for column name {column_name} at index {i}")
+                column_def = Column(column_name, alias)
+            else:
+                raise ClauseException(f"Unknown column definition at index {i}")
+            columns.append(column_def)
+        select_clause = SelectClause(columns)
+        where = rule_definition["where"]
+        groups = OrderedDict(rule_definition["groups"])
+        groups_clause = GroupsClause.from_raw(groups)
+        return GroupRule(
+            select_clause=select_clause,
+            where_clause=None,
+            groups_clause=groups_clause
+        )
+
+
+
 

@@ -1,8 +1,9 @@
 import unittest
+import json
 
 from collections import OrderedDict
 
-from dyno_grp.definitions import Column, SelectClause, GroupDef, GroupsClause
+from dyno_grp.definitions import Column, SelectClause, GroupDef, GroupsClause, GroupRule
 from dyno_grp.errors import ClauseException
 
 
@@ -118,6 +119,26 @@ class TestGroup(unittest.TestCase):
         )
         with self.assertRaises(ClauseException):
             GroupsClause(gen2)
+
+
+class TestGroupRule(unittest.TestCase):
+    def test_group_select_correlation(self):
+        select_clause = SelectClause([
+            Column("column1", "first_name"),
+            Column("column2", "second_name"),
+        ])
+        groups_clause = GroupsClause.from_raw(OrderedDict([
+            ("first_name", {"collect_similar": True, "aggregated_property": "second_column_values"}),
+            ("second_name", dict()),
+        ]))
+        group_rule = GroupRule(select_clause=select_clause, where_clause=None, groups_clause=groups_clause)
+        self.assertEqual(group_rule.select_clause["column1"].alias, "first_name")
+        self.assertEqual(group_rule.group_clause["first_name"].group_name, "first_name")
+
+    def test_group_rule_load(self):
+        with open("rule_example_no_lang.json") as f:
+            definitions = json.load(f)
+        GroupRule.from_raw(definitions)
 
 
 if __name__ == '__main__':
