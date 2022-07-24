@@ -82,17 +82,43 @@ class TestGroupDefinition(unittest.TestCase):
 
 class TestGroup(unittest.TestCase):
 
-    def data_gen(self):
-        return OrderedDict([
+    def test_valid_groups(self):
+        gen = OrderedDict([
             ("column2", {"collect_similar": True, "aggregated_property": "second_column_values"}),
             ("column3", dict()),
         ])
-
-    def test_valid_groups(self):
-        gen = self.data_gen()
         grp_clause = GroupsClause.from_raw(gen)
-        f = grp_clause["column2"]
-        print(f)
+        self.assertEqual(grp_clause["column2"].group_name, GroupDef("column2", **gen["column2"]).group_name)
+        self.assertEqual(grp_clause["column2"].collect_similar, GroupDef("column2", **gen["column2"]).collect_similar)
+        self.assertEqual(grp_clause["column2"].aggregated_property,
+                          GroupDef("column2", **gen["column2"]).aggregated_property)
+
+    def test_invalid_length(self):
+        gen = OrderedDict()
+        with self.assertRaises(ClauseException):
+            GroupsClause(gen)
+
+    def test_invalid_dict_type(self):
+        gen = dict([
+            ("column2", {"collect_similar": True, "aggregated_property": "second_column_values"}),
+            ("column3", dict()),
+        ])
+        with self.assertRaises(ClauseException):
+            GroupsClause.from_raw(gen)
+        gen2 = dict(
+            column2=GroupDef("column2", True, "second_column_values")
+        )
+        with self.assertRaises(ClauseException):
+            GroupsClause(gen2)
+
+    def test_invalid_value_type(self):
+        gen2 = OrderedDict(
+            column2=GroupDef("column2", True, "second_column_values"),
+            column=dict()
+        )
+        with self.assertRaises(ClauseException):
+            GroupsClause(gen2)
+
 
 if __name__ == '__main__':
     unittest.main()

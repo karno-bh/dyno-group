@@ -99,6 +99,9 @@ class GroupDef:
         self._collect_similar = collect_similar
         self._aggregated_property = aggregated_property
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self._group_name}, {self._collect_similar}, {self._aggregated_property})"
+
     @property
     def group_name(self) -> str:
         return self._group_name
@@ -118,6 +121,7 @@ GroupName = str
 class GroupsClause:
     def __init__(self, groups: Dict[GroupName, GroupDef]) -> None:
         super().__init__()
+        self._validate_groups(groups)
         self._groups = groups
 
     def __getitem__(self, item):
@@ -125,6 +129,9 @@ class GroupsClause:
 
     def __iter__(self):
         return self._groups.values()
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self._groups})"
 
     @staticmethod
     def _validate_groups(groups: Dict[GroupName, GroupDef]):
@@ -141,8 +148,29 @@ class GroupsClause:
 
     @staticmethod
     def from_raw(groups_definition: OrderedDict):
+        if not isinstance(groups_definition, OrderedDict):
+            raise ClauseException("Groups must be an OrderedDict (explicitly!)")
         groups = OrderedDict()
         for group_name, group_def in groups_definition.items():
             groups[group_name] = GroupDef(group_name=group_name, **group_def)
         return GroupsClause(groups)
+
+
+class GroupRule:
+    def __init__(self,
+                 select_clause: SelectClause,
+                 where_clause: WhereClause,
+                 groups_clause: GroupsClause) -> None:
+        super().__init__()
+        self._select_clause = select_clause
+        self._where_clause = where_clause
+        self._group_clause = groups_clause
+
+    @staticmethod
+    def _validate_group_relations(select_clause: SelectClause,
+                                  where_clause: WhereClause,
+                                  groups_clause: GroupsClause):
+        for group, group_def in groups_clause:
+            if group not in select_clause:
+                raise ClauseException(f"Group {group} does not exist in select clause")
 
