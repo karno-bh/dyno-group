@@ -1,0 +1,23 @@
+{
+  "select": [
+    {
+      "First Name": {
+        "as": "Name"
+      }
+    },
+    "Last Name",
+    "Age",
+    "Job",
+    "Sex"
+  ],
+  "where": {},
+  "groups": {
+    "Sex": {
+      "collect_similar": true,
+      "aggregated_property": "Job_values"
+    },
+    "Job": {
+      "collect_similar": false
+    }
+  }
+}

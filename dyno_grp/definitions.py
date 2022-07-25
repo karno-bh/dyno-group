@@ -4,7 +4,7 @@ This module aggregates the "grammar" definitions for the clauses of a definition
 from collections import OrderedDict
 from typing import Optional, Dict
 
-from dyno_grp.errors import ClauseException
+from dyno_grp.errors import ClauseException, ProcessException
 
 
 class Column:
@@ -38,6 +38,8 @@ class SelectClause:
         self._validate_columns(columns=columns)
         self._columns = columns
         self._columns_cache = {col.name: col for col in columns}
+        self._columns_cache_set = set(self._columns_cache)
+        self._alias_set = set(col.alias for col in self._columns)
 
     def __len__(self):
         return len(self._columns)
@@ -49,11 +51,30 @@ class SelectClause:
             return self._columns_cache[item]
         raise KeyError(f"Cannot retrieve {item}")
 
+    def get(self, item, default=None) -> Column:
+        if isinstance(item, str):
+            return self._columns_cache.get(item, default)
+        raise KeyError(f"Cannot retrieve {item}")
+
     def __iter__(self):
         return self._columns.__iter__()
 
     def __repr__(self):
         return f"SelectClause({repr(self._columns)})"
+
+    @property
+    def columns_set(self):
+        return self._columns_cache_set
+
+    @property
+    def alias_set(self):
+        return self._alias_set
+
+    def validate_correlation(self, columns: set):
+        diff = self._columns_cache_set - columns
+        if diff:
+            raise ProcessException(f"Columns {columns} are not correlated to "
+                                   f"Select Clause columns {self._columns_cache_set}")
 
     @staticmethod
     def _validate_columns(columns):
@@ -176,15 +197,15 @@ class GroupRule:
         self._group_clause = groups_clause
 
     @property
-    def select_clause(self):
+    def select_clause(self) -> SelectClause:
         return self._select_clause
 
     @property
-    def where_clause(self):
+    def where_clause(self) -> WhereClause:
         return self._where_clause
 
     @property
-    def group_clause(self):
+    def group_clause(self) -> GroupsClause:
         return self._group_clause
 
     @staticmethod

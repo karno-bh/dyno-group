@@ -9,3 +9,11 @@ class ClauseException(Exception):
     """
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+
+
+class ProcessException(Exception):
+    """
+    ClauseException may be raised when there is a problem of processing data from the stream
+    """
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)

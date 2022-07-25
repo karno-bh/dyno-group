@@ -2,7 +2,7 @@
   "select": [
     {
       "column1": {
-        "as": "my_column"
+        "as": "my_column1"
       }
     },
     "column2",
