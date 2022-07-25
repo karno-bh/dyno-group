@@ -1,0 +1,10 @@
+Item,Qty,Supplier,Category,City
+Socks,3,Alpha Clothes,Clothes,New York
+Socks,2,Alpha Clothes,Clothes,Los Angeles
+Boots,5,Alpha Clothes,Clothes,New York
+Boots,2,Beta Boots,Clothes,New York
+Phone,5,Giga Phone,Electronics,New York
+Computer,7,Giga Phone,Electronics,Los Angeles
+Computer,3,Giga Phone,Electronics,New York
+TV,3,Super TV,Electronics,New York
+TV,3,Giga Phones,Electronics,Los Angeles

@@ -8,15 +8,18 @@
     "Last Name",
     "Age",
     "Job",
-    "Sex"
+    "Gender"
   ],
   "where": {},
   "groups": {
-    "Sex": {
+    "Gender": {
       "collect_similar": true,
       "aggregated_property": "Job_values"
     },
     "Job": {
+      "collect_similar": false
+    },
+    "Last Name": {
       "collect_similar": false
     }
   }

@@ -1,0 +1,19 @@
+{
+  "select": [
+    "Item",
+    "Qty",
+    "Supplier",
+    "Category",
+    "City"
+  ],
+  "where": {},
+  "groups": {
+    "Supplier": {
+      "collect_similar": true,
+      "aggregated_property": "items_data"
+    },
+    "City": {
+      "collect_similar": false
+    }
+  }
+}

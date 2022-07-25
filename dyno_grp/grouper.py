@@ -7,7 +7,6 @@ from dyno_grp.definitions import GroupRule
 from dyno_grp.errors import ProcessException
 
 
-
 class Grouper:
     def __init__(self, data_stream, group_rule: GroupRule) -> None:
         super().__init__()
@@ -55,7 +54,6 @@ class Grouper:
             self._group_by(item, group_name, new_group)
         for group in new_group:
             self._process_group(level + 1, groups, bucket_path + [group])
-
 
     def _process_non_first_passes(self):
         groups = [group for _, group in self._group_rule.group_clause.items()]
