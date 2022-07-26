@@ -9,11 +9,9 @@
   "where": {},
   "groups": {
     "Supplier": {
-      "collect_similar": true,
+      "similar_items": ["Category"],
       "aggregated_property": "items_data"
     },
-    "City": {
-      "collect_similar": false
-    }
+    "City": {}
   }
 }

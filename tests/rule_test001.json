@@ -13,14 +13,14 @@
   "where": {},
   "groups": {
     "Gender": {
-      "collect_similar": true,
+      "similar_items": ["Age"],
       "aggregated_property": "Job_values"
     },
     "Job": {
-      "collect_similar": false
+      "similar_items": []
     },
     "Last Name": {
-      "collect_similar": false
+      "similar_items": []
     }
   }
 }

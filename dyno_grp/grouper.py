@@ -36,21 +36,39 @@ class Grouper:
         receiver[group_key].append(utils.filter_dict(item, *result_columns, include=True))
 
     def _process_row_first_pass(self, row: dict):
-        first_group, _ = next(iter(self._group_rule.group_clause.items()))
+        first_group, first_group_def = next(iter(self._group_rule.group_clause.items()))
         row = self._rename_row_keys(row)
         self._group_by(row, first_group, self._result)
 
     def _process_group(self, level, groups, bucket_path):
         if level == len(groups):
             return
-        items_to_group = None
+        items_in_group = None
         upset_group = None
         for i, bucket in enumerate(bucket_path):
-            upset_group = self._result if i == 0 else items_to_group
-            items_to_group = upset_group[bucket]
+            upset_group = self._result if i == 0 else items_in_group
+            items_in_group = upset_group[bucket]
         new_group = upset_group[bucket_path[-1]] = dict()
+        upset_group_rules = groups[level - 1]
+        if upset_group_rules.aggregated_property:
+            non_similar_items = new_group[upset_group_rules.aggregated_property] = list()
+            for item_idx, item in enumerate(items_in_group):
+                aggregated_property_item = dict()
+                for k, v in item.items():
+                    if k in upset_group_rules.similar_items:
+                        if item_idx == 0:
+                            new_group[k] = v
+                        elif new_group[k] != v:
+                            raise ProcessException(f"Cannot combine similar items for Column Alias {k}. "
+                                                   f"Found different values '{new_group[k]}' and '{v}'")
+                    else:
+                        aggregated_property_item[k] = v
+                non_similar_items.append(aggregated_property_item)
+            bucket_path += [upset_group_rules.aggregated_property]
+            items_in_group = new_group[upset_group_rules.aggregated_property]
+            new_group = new_group[upset_group_rules.aggregated_property] = dict()
         group_name = groups[level].group_name
-        for item in items_to_group:
+        for item in items_in_group:
             self._group_by(item, group_name, new_group)
         for group in new_group:
             self._process_group(level + 1, groups, bucket_path + [group])

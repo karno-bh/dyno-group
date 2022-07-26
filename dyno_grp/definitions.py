@@ -3,6 +3,7 @@ This module aggregates the "grammar" definitions for the clauses of a definition
 """
 from collections import OrderedDict
 from typing import Optional, Dict
+from collections.abc import Iterable
 
 from dyno_grp.errors import ClauseException, ProcessException
 
@@ -110,29 +111,31 @@ class WhereClause:
 class GroupDef:
     def __init__(self,
                  group_name: str,
-                 collect_similar: bool = False,
+                 similar_items: Optional[list] = None,
                  aggregated_property: str = None) -> None:
         super().__init__()
+        if not similar_items:
+            similar_items = set()
         if not group_name or not isinstance(group_name, str):
             raise ClauseException("Group Name must be non empty string")
-        if not isinstance(collect_similar, bool):
-            raise ClauseException("Collect Similar must be boolean")
-        if collect_similar and not aggregated_property:
-            raise ClauseException("IF collect_similar is defined THEN aggregate_property must be defined")
+        if not isinstance(similar_items, Iterable):
+            raise ClauseException("Collect Similar must be iterable")
+        if similar_items and not aggregated_property:
+            raise ClauseException("IF similar items are defined THEN aggregate_property must be defined")
         self._group_name = group_name
-        self._collect_similar = collect_similar
+        self._similar_items = set(similar_items)
         self._aggregated_property = aggregated_property
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self._group_name}, {self._collect_similar}, {self._aggregated_property})"
+        return f"{self.__class__.__name__}({self._group_name}, {self._similar_items}, {self._aggregated_property})"
 
     @property
     def group_name(self) -> str:
         return self._group_name
 
     @property
-    def collect_similar(self) -> bool:
-        return self._collect_similar
+    def similar_items(self) -> set:
+        return self._similar_items
 
     @property
     def aggregated_property(self):
@@ -146,7 +149,7 @@ class GroupsClause:
     def __init__(self, groups: Dict[GroupName, GroupDef]) -> None:
         super().__init__()
         self._validate_groups(groups)
-        self._groups = groups
+        self._groups: Dict[GroupName, GroupDef] = groups
 
     def __getitem__(self, item):
         return self._groups[item]
@@ -167,11 +170,17 @@ class GroupsClause:
         if not isinstance(groups, OrderedDict):
             raise ClauseException("Groups must be an OrderedDict (explicitly!)")
 
+        group_names = groups.keys()
         for group_name, group_def in groups.items():
             if not isinstance(group_name, str):
                 raise ClauseException("Group Key must be only string")
             if not isinstance(group_def, GroupDef):
                 raise ClauseException("Group Definition must be of type GroupDef")
+            invalid_similar_items = group_def.similar_items.intersection(group_names)
+            if invalid_similar_items:
+                raise ClauseException(f"Similar items {invalid_similar_items} in group {group_name} "
+                                      f"collide with group names")
+
 
     @staticmethod
     def from_raw(groups_definition: OrderedDict):
@@ -216,6 +225,10 @@ class GroupRule:
         for group, group_def in groups_clause.items():
             if group not in select_clause_aliases:
                 raise ClauseException(f"Group {group} does not exist in select clause")
+            similar_items_not_in_select = group_def.similar_items - select_clause_aliases
+            if similar_items_not_in_select:
+                raise ClauseException(f"Group {group} has similar items which are not defined in select")
+
 
     @staticmethod
     def from_raw(rule_definition: dict):
