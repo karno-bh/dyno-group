@@ -12,6 +12,7 @@
       "similar_items": ["Category"],
       "aggregated_property": "items_data"
     },
-    "City": {}
+    "City": {},
+    "Item": {}
   }
 }

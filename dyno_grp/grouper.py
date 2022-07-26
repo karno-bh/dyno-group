@@ -41,15 +41,16 @@ class Grouper:
         self._group_by(row, first_group, self._result)
 
     def _process_group(self, level, groups, bucket_path):
-        if level == len(groups):
-            return
         items_in_group = None
         upset_group = None
         for i, bucket in enumerate(bucket_path):
             upset_group = self._result if i == 0 else items_in_group
             items_in_group = upset_group[bucket]
-        new_group = upset_group[bucket_path[-1]] = dict()
         upset_group_rules = groups[level - 1]
+        if level == len(groups) and not upset_group_rules.aggregated_property:
+            return
+        upset_group[bucket_path[-1]] = dict()
+        new_group = upset_group[bucket_path[-1]]
         if upset_group_rules.aggregated_property:
             non_similar_items = new_group[upset_group_rules.aggregated_property] = list()
             for item_idx, item in enumerate(items_in_group):
@@ -64,9 +65,12 @@ class Grouper:
                     else:
                         aggregated_property_item[k] = v
                 non_similar_items.append(aggregated_property_item)
+            if level == len(groups):
+                return
             bucket_path += [upset_group_rules.aggregated_property]
             items_in_group = new_group[upset_group_rules.aggregated_property]
-            new_group = new_group[upset_group_rules.aggregated_property] = dict()
+            new_group[upset_group_rules.aggregated_property] = dict()
+            new_group = new_group[upset_group_rules.aggregated_property]
         group_name = groups[level].group_name
         for item in items_in_group:
             self._group_by(item, group_name, new_group)
