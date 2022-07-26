@@ -1,0 +1,14 @@
+# functions:
+#  len, subst, contains, is,.. --> identifiers
+# operators
+# - comparison:
+#   <, >, =, !=, <>
+# - arithmetic:
+#   +,-,*,/,%
+# - logical:
+#   and, or, not, like, any, all, between, is, null... --> keywords (?)
+# literals:
+#   'asdasda' -> strings, numbers
+
+# example
+(len(my_column) < 10 or my_column like 'help me*') and column2 > column3

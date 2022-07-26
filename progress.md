@@ -10,3 +10,10 @@
     - Second milestone:
       - Implement star '*' selector
       - Implement rules in some form
+
+* 2022-07-26
+  - Done:
+    - Correlation tests added of Group <-> Select Clauses added
+    - First milestone: grouping with similar items aggregation. Where clause is not implemented.
+  - Todo:
+    - Start second milestone: where clause should be implemented. Star selector may not be implemented
